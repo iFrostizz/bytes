@@ -212,11 +212,14 @@ impl<'de, const N: usize> Visitor<'de> for ByteArrayVisitor<N> {
     where
         E: Error,
     {
-        Ok(ByteArray {
-            bytes: v
-                .try_into()
-                .map_err(|_| E::invalid_length(v.len(), &self))?,
-        })
+        if v.len() > N {
+            return Err(E::invalid_length(v.len(), &self));
+        }
+
+        let mut bytes = [0; N];
+        bytes[(N - v.len())..].copy_from_slice(v);
+
+        Ok(ByteArray { bytes })
     }
 
     fn visit_str<E>(self, v: &str) -> Result<ByteArray<N>, E>
